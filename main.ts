@@ -9,6 +9,9 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+const MIN_CHARS = 1;
+const MAX_CHARS = 200;
+
 const ENTRY =
   "My alarm rang at 6 AM on a Saturday like it had a shift to clock into — buddy, it's the weekend, even the snooze button filed for overtime.";
 
@@ -31,22 +34,26 @@ function validateEntry(text: string): void {
   if (text.includes("\n") || text.includes("\r")) {
     throw new Error("entry must be a single line");
   }
-  if (text.length < 1 || text.length > 200) {
+  if (text.length < MIN_CHARS || text.length > MAX_CHARS) {
     throw new Error(
-      `entry must be 1-200 characters, got ${text.length}`
+      `entry must be ${MIN_CHARS}-${MAX_CHARS} characters, got ${text.length}`
     );
   }
 }
 
-const outPath = resolveOutputPath();
-validateEntry(ENTRY);
-mkdirSync(dirname(outPath), { recursive: true });
-writeFileSync(outPath, ENTRY, "utf8");
-// Read back and verify: the file on disk must be byte-identical to the
-// entry we validated, with no trailing newline or extra whitespace.
-const written = readFileSync(outPath, "utf8");
-if (written !== ENTRY) {
-  throw new Error("round-trip check failed: written entry differs");
+function main(): void {
+  const outPath = resolveOutputPath();
+  validateEntry(ENTRY);
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, ENTRY, "utf8");
+  // Read back and verify: the file on disk must be byte-identical to the
+  // entry we validated, with no trailing newline or extra whitespace.
+  const written = readFileSync(outPath, "utf8");
+  if (written !== ENTRY) {
+    throw new Error("round-trip check failed: written entry differs");
+  }
+  validateEntry(written);
+  console.log(`wrote ${ENTRY.length} chars to ${outPath}`);
 }
-validateEntry(written);
-console.log(`wrote ${ENTRY.length} chars to ${outPath}`);
+
+main();
